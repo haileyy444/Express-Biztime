@@ -23,7 +23,12 @@ router.get('/', async (req, res, next) => {
 router.get('/:code', async (req, res, next) => {
     try {
         let code = req.params.code;
-        const resultsCompany = await db.query(`SELECT code, name, description FROM companies WHERE code=$1`, [code]);
+        const resultsCompany = await db.query(`SELECT c.code, c.name, c.description, JSON_AGG(i.industry) AS industries
+             FROM companies c
+             LEFT JOIN company_industries ci ON c.code = ci.company_code
+             LEFT JOIN industries i ON ci.industry_code = i.code
+             WHERE c.code = $1
+             GROUP BY c.code`, [code]);
         const resultsInvoice = await db.query(`SELECT id FROM invoices WHERE comp_code=$1`, [code]);
         
         if (resultsCompany.rows.length ===0 ) {
@@ -102,5 +107,7 @@ router.delete("/:code", async (req, res, next) => {
         return next(e);
     }
 });
+
+
 
 module.exports = router;
